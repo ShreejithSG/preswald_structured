@@ -1,4 +1,4 @@
-name: Export Preswald Dashboard to PDF
+name: Export and Deploy Preswald PDF
 
 on:
   push:
@@ -10,32 +10,34 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.10
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10
 
-    - name: Install dependencies
-      run: |
-        pip install -U pip
-        pip install preswald playwright
-        playwright install
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install preswald playwright
 
-    - name: Start Preswald app in background
-      run: |
-        nohup preswald run hello.py &
-        sleep 10  # wait for http://localhost:8501 to boot
+      - name: Install Playwright browsers
+        run: playwright install
 
-    - name: Export dashboard to PDF
-      run: |
-        preswald export --format pdf hello.py
+      - name: Export Preswald Dashboard to PDF
+        run: preswald export --format pdf hello.py --output preswald_report.pdf
 
-    - name: Upload PDF to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: .  # This uploads the root dir — includes preswald_report.pdf
-        keep_files: true
+      - name: Copy PDF to docs folder
+        run: |
+          mkdir -p docs
+          cp preswald_report.pdf docs/index.pdf
+
+      - name: Commit and push PDF
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add docs/index.pdf
+          git commit -m "Deploy Preswald PDF report"
+          git push
