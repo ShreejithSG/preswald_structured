@@ -1,0 +1,39 @@
+name: Export Preswald Dashboard to PDF
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📦 Checkout repo
+        uses: actions/checkout@v3
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: 🧪 Install dependencies
+        run: |
+          pip install preswald playwright
+          playwright install --with-deps
+
+      - name: 🚀 Run Preswald app in background
+        run: |
+          nohup preswald run hello.py > server.log 2>&1 &
+          sleep 7  # wait for server to start
+
+      - name: 🧾 Export to PDF
+        run: |
+          preswald export --format pdf hello.py --output preswald_report.pdf
+
+      - name: 📤 Upload PDF as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: preswald-report
+          path: preswald_report.pdf
