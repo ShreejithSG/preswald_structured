@@ -1,0 +1,41 @@
+name: Export Preswald Dashboard to PDF
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  export-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.10
+
+    - name: Install dependencies
+      run: |
+        pip install -U pip
+        pip install preswald playwright
+        playwright install
+
+    - name: Start Preswald app in background
+      run: |
+        nohup preswald run hello.py &
+        sleep 10  # wait for http://localhost:8501 to boot
+
+    - name: Export dashboard to PDF
+      run: |
+        preswald export --format pdf hello.py
+
+    - name: Upload PDF to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: .  # This uploads the root dir — includes preswald_report.pdf
+        keep_files: true
